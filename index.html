@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aure × OnSystem — Autorização Shopify</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111;
+    --border: rgba(255,255,255,0.08);
+    --green: #00e676;
+    --green-dim: rgba(0,230,118,0.1);
+    --red: #ff4d4d;
+    --text: #f0f0f0;
+    --muted: #666;
+    --mono: 'DM Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Manrope',sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:2rem;
+  }
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,230,118,0.06) 0%, transparent 60%);
+    pointer-events:none;
+  }
+
+  .card {
+    position:relative;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:3rem;
+    max-width:560px;
+    width:100%;
+    text-align:center;
+  }
+
+  .logo {
+    font-family:'Syne',sans-serif;
+    font-size:0.75rem;
+    font-weight:700;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--muted);
+    margin-bottom:2rem;
+  }
+  .logo span { color:var(--green); }
+
+  h1 {
+    font-family:'Syne',sans-serif;
+    font-size:1.8rem;
+    font-weight:800;
+    line-height:1.2;
+    margin-bottom:0.75rem;
+  }
+
+  .subtitle {
+    color:var(--muted);
+    font-size:0.9rem;
+    line-height:1.6;
+    margin-bottom:2.5rem;
+  }
+
+  /* STATE: IDLE */
+  #state-idle {}
+
+  .btn-auth {
+    display:inline-flex;
+    align-items:center;
+    gap:0.75rem;
+    background:var(--green);
+    color:#000;
+    font-family:'Syne',sans-serif;
+    font-size:0.95rem;
+    font-weight:700;
+    letter-spacing:0.05em;
+    padding:1rem 2rem;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+    transition:all 0.2s;
+    text-decoration:none;
+  }
+  .btn-auth:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(0,230,118,0.25); }
+  .btn-auth svg { width:20px; height:20px; }
+
+  .info-row {
+    margin-top:2rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0.5rem;
+    font-size:0.78rem;
+    color:var(--muted);
+  }
+  .info-row::before, .info-row::after {
+    content:'';
+    flex:1;
+    height:1px;
+    background:var(--border);
+  }
+
+  /* STATE: LOADING */
+  #state-loading { display:none; }
+  .spinner {
+    width:48px; height:48px;
+    border:3px solid var(--border);
+    border-top-color:var(--green);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+    margin:0 auto 1.5rem;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* STATE: SUCCESS */
+  #state-success { display:none; }
+  .success-icon {
+    width:56px; height:56px;
+    background:var(--green-dim);
+    border:1px solid rgba(0,230,118,0.3);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 1.5rem;
+    font-size:1.5rem;
+  }
+  .token-box {
+    background:#000;
+    border:1px solid rgba(0,230,118,0.2);
+    border-radius:10px;
+    padding:1.25rem 1.5rem;
+    margin:1.5rem 0;
+    text-align:left;
+  }
+  .token-label {
+    font-size:0.7rem;
+    font-weight:700;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    color:var(--green);
+    margin-bottom:0.5rem;
+  }
+  .token-value {
+    font-family:var(--mono);
+    font-size:0.82rem;
+    color:#f0f0f0;
+    word-break:break-all;
+    line-height:1.5;
+  }
+  .btn-copy {
+    width:100%;
+    background:var(--green-dim);
+    border:1px solid rgba(0,230,118,0.25);
+    color:var(--green);
+    font-family:'Syne',sans-serif;
+    font-size:0.85rem;
+    font-weight:700;
+    letter-spacing:0.05em;
+    padding:0.85rem;
+    border-radius:8px;
+    cursor:pointer;
+    transition:all 0.2s;
+    margin-top:0.5rem;
+  }
+  .btn-copy:hover { background:rgba(0,230,118,0.15); }
+  .btn-copy.copied { color:#000; background:var(--green); }
+
+  /* STATE: ERROR */
+  #state-error { display:none; }
+  .error-icon {
+    width:56px; height:56px;
+    background:rgba(255,77,77,0.1);
+    border:1px solid rgba(255,77,77,0.3);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    margin:0 auto 1.5rem;
+    font-size:1.5rem;
+  }
+  .error-msg {
+    font-family:var(--mono);
+    font-size:0.82rem;
+    color:var(--red);
+    background:rgba(255,77,77,0.05);
+    border:1px solid rgba(255,77,77,0.15);
+    border-radius:8px;
+    padding:1rem;
+    margin:1rem 0;
+    word-break:break-all;
+  }
+  .btn-retry {
+    background:transparent;
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:'Syne',sans-serif;
+    font-size:0.85rem;
+    font-weight:700;
+    padding:0.85rem 2rem;
+    border-radius:8px;
+    cursor:pointer;
+    margin-top:1rem;
+    transition:all 0.2s;
+  }
+  .btn-retry:hover { border-color:var(--text); }
+
+  .step-note {
+    margin-top:2rem;
+    font-size:0.75rem;
+    color:var(--muted);
+    line-height:1.7;
+  }
+  .step-note strong { color:#aaa; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="logo">OnSystem × <span>Aure</span></div>
+
+  <!-- IDLE -->
+  <div id="state-idle">
+    <h1>Autorizar acesso<br>à loja Shopify</h1>
+    <p class="subtitle">Clique abaixo para autorizar o app API ONSYSTEM<br>na loja <strong>aure-9615.myshopify.com</strong></p>
+    <a id="btn-auth" class="btn-auth" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+      Conectar com Shopify
+    </a>
+    <div class="info-row">Redirecionamento seguro via OAuth 2.0</div>
+    <p class="step-note">
+      <strong>O que vai acontecer:</strong><br>
+      Você será redirecionado para a Shopify → confirma a autorização → volta aqui com o token gerado automaticamente.
+    </p>
+  </div>
+
+  <!-- LOADING -->
+  <div id="state-loading">
+    <div class="spinner"></div>
+    <h1>Processando...</h1>
+    <p class="subtitle">Aguarde enquanto validamos a autorização com a Shopify.</p>
+  </div>
+
+  <!-- SUCCESS -->
+  <div id="state-success">
+    <div class="success-icon">✓</div>
+    <h1>Token gerado!</h1>
+    <p class="subtitle">Copie o token abaixo e guarde em lugar seguro.<br>Ele não será exibido novamente.</p>
+    <div class="token-box">
+      <div class="token-label">Access Token</div>
+      <div class="token-value" id="token-display">—</div>
+    </div>
+    <button class="btn-copy" id="btn-copy" onclick="copyToken()">Copiar token</button>
+    <p class="step-note" style="margin-top:1.5rem">
+      <strong>Próximo passo:</strong> Cole esse token no Claude para começar a gerenciar produtos, pedidos e temas da loja Aure via API.
+    </p>
+  </div>
+
+  <!-- ERROR -->
+  <div id="state-error">
+    <div class="error-icon">✕</div>
+    <h1>Erro na autorização</h1>
+    <p class="subtitle">Algo deu errado durante o processo OAuth.</p>
+    <div class="error-msg" id="error-display">—</div>
+    <button class="btn-retry" onclick="resetToIdle()">Tentar novamente</button>
+  </div>
+</div>
+
+<script>
+  // ── CONFIG ──
+  const SHOP = 'aure-9615.myshopify.com';
+  const CLIENT_ID = '8a15a94f6b0c3f6c8266d6f072f8e9a2';
+  const SCOPES = 'read_products,write_products,read_orders,write_orders,read_customers,write_customers,read_inventory,write_inventory,read_themes,write_themes,read_files,write_files,read_content,write_content,read_price_rules,write_price_rules,read_discounts,write_discounts';
+  
+  // ── REDIRECT URI = esta mesma página ──
+  const REDIRECT_URI = window.location.href.split('?')[0].split('#')[0];
+  const STATE_KEY = 'shopify_oauth_state';
+
+  // ── MOSTRAR ESTADO ──
+  function show(id) {
+    ['idle','loading','success','error'].forEach(s => {
+      document.getElementById('state-'+s).style.display = s === id ? 'block' : 'none';
+    });
+  }
+
+  function resetToIdle() {
+    localStorage.removeItem(STATE_KEY);
+    window.location.href = REDIRECT_URI;
+  }
+
+  // ── INICIAR OAUTH ──
+  function startAuth() {
+    const state = Math.random().toString(36).substring(2, 15);
+    localStorage.setItem(STATE_KEY, state);
+
+    const params = new URLSearchParams({
+      client_id: CLIENT_ID,
+      scope: SCOPES,
+      redirect_uri: REDIRECT_URI,
+      state: state,
+      'grant_options[]': 'per-user'
+    });
+
+    window.location.href = `https://${SHOP}/admin/oauth/authorize?${params.toString()}`;
+  }
+
+  document.getElementById('btn-auth').addEventListener('click', function(e) {
+    e.preventDefault();
+    startAuth();
+  });
+
+  // ── COPIAR TOKEN ──
+  let tokenValue = '';
+  function copyToken() {
+    navigator.clipboard.writeText(tokenValue).then(() => {
+      const btn = document.getElementById('btn-copy');
+      btn.textContent = '✓ Copiado!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copiar token';
+        btn.classList.remove('copied');
+      }, 2500);
+    });
+  }
+
+  // ── VERIFICAR SE VOLTOU DO OAUTH ──
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const returnedState = params.get('state');
+  const errorParam = params.get('error');
+
+  if (errorParam) {
+    show('error');
+    document.getElementById('error-display').textContent = 
+      `error: ${errorParam}\ndescription: ${params.get('error_description') || 'sem descrição'}`;
+
+  } else if (code && returnedState) {
+    const savedState = localStorage.getItem(STATE_KEY);
+
+    if (savedState && savedState !== returnedState) {
+      show('error');
+      document.getElementById('error-display').textContent = 'State mismatch — possível ataque CSRF. Tente novamente.';
+    } else {
+      show('loading');
+      localStorage.removeItem(STATE_KEY);
+
+      // ── TROCAR CODE PELO ACCESS TOKEN ──
+      // NOTA: A troca precisa ser feita via servidor (CORS impede chamada direto do browser).
+      // Por isso exibimos o código e as instruções para trocar via curl/terminal.
+      setTimeout(() => {
+        show('success');
+        tokenValue = code;
+        document.getElementById('token-display').textContent = code;
+        
+        // Substituir conteúdo do success para mostrar o código + instrução
+        document.querySelector('#state-success .subtitle').innerHTML = 
+          `Você recebeu o <strong>código de autorização</strong> abaixo.<br>Cole no Claude para continuar — ele vai trocar pelo token final.`;
+        document.querySelector('.token-label').textContent = 'Código de Autorização (code)';
+        document.querySelector('.step-note strong').textContent = 'Próximo passo:';
+        document.querySelector('.step-note').innerHTML = `
+          <strong>Próximo passo:</strong> Copie esse código e cole no Claude.<br>
+          Ele vai trocar pelo <code style="color:var(--green)">access_token</code> definitivo via API.
+        `;
+      }, 1500);
+    }
+  } else {
+    show('idle');
+  }
+</script>
+</body>
+</html>
